@@ -1,5 +1,5 @@
-checkpoints_101_sgd
-checkpoints_18_sgd
-data
-runs
-info.json
+BiseNet/checkpoints_101_sgd/
+BiseNet/checkpoints_18_sgd/
+BiseNet/data/
+BiseNet/runs/
+BiseNet/info.json
