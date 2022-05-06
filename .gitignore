@@ -1,0 +1,5 @@
+checkpoints_101_sgd
+checkpoints_18_sgd
+data
+runs
+info.json
