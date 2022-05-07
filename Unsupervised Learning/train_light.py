@@ -13,7 +13,7 @@ from utils import reverse_one_hot, compute_global_accuracy, fast_hist, \
     per_class_iu
 from loss import DiceLoss
 import torch.cuda.amp as amp
-from model.discriminator import FCDiscriminator
+from model.discriminator_light import FCDiscriminator
 from dataset.build_datasetGTA5 import GTA5DataSet
 from dataset.build_datasetcityscapes import cityscapesDataSet
 
