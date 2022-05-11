@@ -166,7 +166,6 @@ class BiSeNet(torch.nn.Module):
 
         if self.training == True:
             return result, cx1_sup, cx2_sup
-
         return result
 
 

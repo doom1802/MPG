@@ -8,6 +8,14 @@ import random
 import numbers
 import torchvision
 
+
+def adjust_learning_rate_D(optimizer, i_iter):
+    lr = lr_poly(args.learning_rate_D, i_iter, args.num_steps, args.power)
+    optimizer.param_groups[0]['lr'] = lr
+    if len(optimizer.param_groups) > 1:
+        optimizer.param_groups[1]['lr'] = lr * 10
+
+        
 def poly_lr_scheduler(optimizer, init_lr, iter, lr_decay_iter=1,
                       max_iter=300, power=0.9):
 	"""Polynomial decay of learning rate
@@ -331,8 +339,31 @@ class CrossEntropy2d(nn.Module):
         loss = F.cross_entropy(predict, target, weight=weight, size_average=self.size_average)
         return loss
 
+def get_target_tensor(input_tensor, mode):
+    # Source tensor = 0.0
+    # Target tensor =  1.0
+    source_tensor = torch.FloatTensor(1).fill_(0.0)
+    target_tensor = torch.FloatTensor(1).fill_(1.0)
+    source_tensor = source_tensor.expand_as(input_tensor)
+    target_tensor = target_tensor.expand_as(input_tensor)
+    if mode == 'source':
+        return source_tensor
+    elif mode == 'target':
+        return target_tensor
 
 
-
+def get_target_tensor_mc(input_tensor, mode):
+    # Source tensor = 0.0
+    # Target tensor =  1.0
+    source_tensor = torch.FloatTensor(1).fill_(0.0)
+    target_tensor = torch.FloatTensor(1).fill_(1.0)
+    #source_tensor = source_tensor.expand_as(input_tensor)
+    source_tensor = source_tensor.expand((input_tensor.shape[0], input_tensor.shape[2], input_tensor.shape[3]))
+    #target_tensor = target_tensor.expand_as(input_tensor)
+    target_tensor = target_tensor.expand((input_tensor.shape[0], input_tensor.shape[2], input_tensor.shape[3]))
+    if mode == 'source':
+        return source_tensor
+    elif mode == 'target':
+        return target_tensor
 
 

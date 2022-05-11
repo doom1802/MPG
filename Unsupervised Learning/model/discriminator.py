@@ -14,7 +14,7 @@ class FCDiscriminator(nn.Module):
 		self.classifier = nn.Conv2d(ndf*8, 1, kernel_size=4, stride=2, padding=1)
 
 		self.leaky_relu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
-		#self.up_sample = nn.Upsample(scale_factor=32, mode='bilinear')
+		self.up_sample = nn.Upsample(scale_factor=32, mode='bilinear')
 		#self.sigmoid = nn.Sigmoid()
 
 
@@ -28,7 +28,9 @@ class FCDiscriminator(nn.Module):
 		x = self.conv4(x)
 		x = self.leaky_relu(x)
 		x = self.classifier(x)
-		#x = self.up_sample(x)
+		x = self.up_sample(x)
 		#x = self.sigmoid(x) 
 
 		return x
+
+

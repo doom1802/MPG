@@ -9,6 +9,7 @@ from tensorboardX import SummaryWriter
 from tqdm import tqdm
 import numpy as np
 from utils import poly_lr_scheduler
+import torch.nn.functional as F
 from utils import reverse_one_hot, compute_global_accuracy, fast_hist, \
     per_class_iu
 from loss import DiceLoss
@@ -130,9 +131,9 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, model_D1, 
             
             with amp.autocast():
                 output_t, output_sup1_t, output_sup2_t = model(data_target) 
-                D_out = model_D(output_t)
-                D_out1 = model_D1(output_sup1_t)
-                D_out2 = model_D2(output_sup2_t)
+                D_out = model_D( F.softmax(output_t, dim=1))
+                D_out1 = model_D1( F.softmax(output_sup1_t, dim=1))
+                D_out2 = model_D2(F.softmax(output_sup2_t, dim=1) ) 
 
                 loss_adv_target = bce_loss(D_out,
                                        Variable(torch.FloatTensor(D_out.data.size()).fill_(source_label)).cuda())
@@ -165,9 +166,9 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, model_D1, 
               output_sup1 = output_sup1.detach()
               output_sup2 = output_sup2.detach()
 
-              D_out = model_D(output)
-              D_out1 = model_D1(output_sup1)
-              D_out2 = model_D2(output_sup2)
+              D_out = model_D( F.softmax(output, dim=1))
+              D_out1 = model_D1( F.softmax(output_sup1, dim=1))
+              D_out2 = model_D2(F.softmax(output_sup2, dim=1) )
 
               loss_D_s = bce_loss(D_out,
                                         Variable(torch.FloatTensor(D_out.data.size()).fill_(source_label)).cuda())
@@ -190,9 +191,9 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, model_D1, 
               output_sup1_t = output_sup1_t.detach()
               output_sup2_t = output_sup2_t.detach()
 
-              D_out = model_D(output_t)
-              D_out1 = model_D1(output_sup1_t)
-              D_out2 = model_D2(output_sup2_t)
+              D_out = model_D( F.softmax(output_t, dim=1))
+              D_out1 = model_D1( F.softmax(output_sup1_t, dim=1))
+              D_out2 = model_D2(F.softmax(output_sup2_t, dim=1) )
 
               loss_D_s = bce_loss(D_out,
                                         Variable(torch.FloatTensor(D_out.data.size()).fill_(target_label)).cuda())
@@ -282,11 +283,11 @@ def main(params):
                         help="Accumulate gradients for ITER_SIZE iterations.")
     parser.add_argument("--lambda-seg", type=float, default=0.1,
                         help="lambda_seg.")
-    parser.add_argument("--lambda-adv-target", type=float, default=0.0004,
+    parser.add_argument("--lambda-adv-target", type=float, default=0.001,
                         help="lambda_adv for adversarial training.")
     parser.add_argument("--lambda-adv-target1", type=float, default=0.0002,
                         help="lambda_adv for adversarial training.")
-    parser.add_argument("--lambda-adv-target2", type=float, default=0.001,
+    parser.add_argument("--lambda-adv-target2", type=float, default=0.0004,
                         help="lambda_adv for adversarial training.")
     
     args = parser.parse_args(params)
@@ -379,4 +380,3 @@ if __name__ == '__main__':
 
     ]
     main(params)
-

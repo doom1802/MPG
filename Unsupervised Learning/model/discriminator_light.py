@@ -1,10 +1,10 @@
 import torch.nn as nn
 
 
-class FCDiscriminator(nn.Module):
+class FCDiscriminatorLight(nn.Module):
 
 	def __init__(self, num_classes, ndf = 64):
-		super(FCDiscriminator, self).__init__()
+		super(FCDiscriminatorLight, self).__init__()
 
 		self.depthwise1 = nn.Conv2d(num_classes, num_classes, kernel_size=4, padding=1, groups=num_classes, bias=False, stride=2)
 		self.pointwise1 = nn.Conv2d(num_classes, ndf, kernel_size=1, bias=False)
@@ -22,8 +22,8 @@ class FCDiscriminator(nn.Module):
 		self.pointwisec= nn.Conv2d(ndf*8, 1, kernel_size=1, bias=False)
 
 		self.leaky_relu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
-		#self.up_sample = nn.Upsample(scale_factor=32, mode='bilinear')
-		#self.sigmoid = nn.Sigmoid()
+		self.up_sample = nn.Upsample(scale_factor=32, mode='bilinear')
+		self.sigmoid = nn.Sigmoid()
 
 
 	def forward(self, x):
@@ -50,7 +50,7 @@ class FCDiscriminator(nn.Module):
 		x = self.depthwisec(x)
 		x = self.pointwisec(x)
 		
-		#x = self.up_sample(x)
-		#x = self.sigmoid(x) 
+		x = self.up_sample(x)
+		x = self.sigmoid(x) 
 
 		return x

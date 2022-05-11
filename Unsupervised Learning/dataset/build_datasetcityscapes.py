@@ -71,7 +71,6 @@ class cityscapesDataSet(data.Dataset):
       for k, v in self.id_to_trainid.items():
           label_copy[label == k] = v
 
-
       image = image[:, :, ::-1]  # change to BGR
       image -= self.mean
       #image = normalize(image, self.mean, std)

@@ -13,7 +13,7 @@ from utils import reverse_one_hot, compute_global_accuracy, fast_hist, \
     per_class_iu
 from loss import DiceLoss
 import torch.cuda.amp as amp
-from model.discriminator_light import FCDiscriminator
+from model.discriminator_light import FCDiscriminatorLight
 from dataset.build_datasetGTA5 import GTA5DataSet
 from dataset.build_datasetcityscapes import cityscapesDataSet
 
@@ -338,15 +338,15 @@ def main(params):
     optimizer_D1 = torch.optim.Adam(model.parameters(), args.learning_rate)
     optimizer_D2 = torch.optim.Adam(model.parameters(), args.learning_rate)
     
-    model_D = FCDiscriminator(num_classes=args.num_classes)
+    model_D = FCDiscriminatorLight(num_classes=args.num_classes)
 
     model_D.cuda()
 
-    model_D1 = FCDiscriminator(num_classes=args.num_classes)
+    model_D1 = FCDiscriminatorLight(num_classes=args.num_classes)
 
     model_D1.cuda()
 
-    model_D2 = FCDiscriminator(num_classes=args.num_classes)
+    model_D2 = FCDiscriminatorLight(num_classes=args.num_classes)
 
     model_D2.cuda()
 
