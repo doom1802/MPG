@@ -1,11 +1,6 @@
-BiseNet/checkpoints_101_sgd/
-BiseNet/checkpoints_18_sgd/
-BiseNet/data/
-BiseNet/runs/
-BiseNet/info.json
 
-Unsupervised Learning/checkpoints_101_sgd/
-Unsupervised Learning/checkpoints_18_sgd/
-Unsupervised Learning/data/
-Unsupervised Learning/runs/
-Unsupervised Learning/info.json
+data/
+runs/
+
+
+
