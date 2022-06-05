@@ -9,6 +9,38 @@ import numbers
 import torchvision
 import os
 
+palette = [128, 64, 128,  # road, 0
+            244, 35, 232,  # sidewalk, 1
+            70, 70, 70,  # building, 2
+            102, 102, 156,  # wall, 3
+            190, 153, 153,  # fence, 4
+            153, 153, 153,  # pole, 5
+            250, 170, 30,  # traffic light, 6
+            220, 220, 0,  # traffic sign, 7
+            107, 142, 35,  # vegetation, 8
+            152, 251, 152,  # terrain, 9
+            70, 130, 180,  # sky, 10
+            220, 20, 60,  # person, 11
+            255, 0, 0,  # rider, 12
+            0, 0, 142,  # car, 13
+            0, 0, 70,  # truck, 14
+            0, 60, 100,  # bus, 15
+            0, 80, 100,  # train, 16
+            0, 0, 230,  # motor-bike, 17
+            119, 11, 32]  # bike, 18
+
+zero_pad = 256 * 3 - len(palette)
+for i in range(zero_pad):
+    palette.append(0)
+
+
+def rgb_label(label):
+
+    new_mask = Image.fromarray(label.astype(np.uint8)).convert('P')
+    new_mask.putpalette(palette)
+    return new_mask
+
+
 
 def flatten(tensor):
     """Flattens a given tensor such that the channel axis is first.
@@ -354,9 +386,9 @@ def save_da_model(args, model, model_d1, optimizer, optimizer_d1, epoch, name = 
     }, os.path.join(args.save_model_path, args.checkpoint_name))
 
 
-def load_da_model(args, model, model_d1, optimizer, optimizer_d1, scheduler, scheduler_d1):
+def load_da_model(args, model, model_d1, optimizer, optimizer_d1):
     print("Resuming Model")
-    state_dict_path = os.path.join(args.checkpoints_dir, args.checkpoint_name)
+    state_dict_path = os.path.join(args.save_model_path, args.checkpoint_name)
     checkpoint = torch.load(state_dict_path)
 
     optimizer.load_state_dict(checkpoint['optimizer_state'])
@@ -364,4 +396,4 @@ def load_da_model(args, model, model_d1, optimizer, optimizer_d1, scheduler, sch
     model.load_state_dict(checkpoint['model_state'])
     model_d1.load_state_dict(checkpoint['model_d_state'])
     epoch = checkpoint['total_epoch_so_far']
-    return model, model_d1, optimizer, optimizer_d1, scheduler, scheduler_d1, epoch
+    return model, model_d1, optimizer, optimizer_d1, epoch

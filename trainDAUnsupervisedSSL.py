@@ -102,17 +102,18 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
                 if get_label:
                   #IN CASE WITH PSEUDO-LABELS
                   loss1t = loss_func(output_t, label_target)
-                  loss2t = 0.0#loss_func(output_sup1_t, label_target)
-                  loss3t = 0.0#loss_func(output_sup2_t, label_target)
-                  loss4t = loss_func(output_sup3_t, label_target)
-                  loss5t = loss_func(output_sup4_t, label_target)
+                  loss2t = 0.0 #loss_func(output_sup1_t, label_target)
+                  loss3t = 0.0 #loss_func(output_sup2_t, label_target)
+                  loss4t = 0.0 #loss_func(output_sup3_t, label_target)
+                  loss5t = 0.0 #loss_func(output_sup4_t, label_target)
                   loss_seg_target = loss1t + loss2t + loss3t + loss4t + loss5t
                 else:
                   loss_seg_target = 0.0
-                  D_out = model_D(F.softmax(output_t, dim=1))
 
-                  loss_adv_target = bce_loss(D_out, Variable(torch.FloatTensor(D_out.data.size()).fill_(source_label)).cuda())
-                  loss_target = args.lambda_adv_target * loss_adv_target + loss_seg_target
+                D_out = model_D(F.softmax(output_t, dim=1))
+
+                loss_adv_target = bce_loss(D_out, Variable(torch.FloatTensor(D_out.data.size()).fill_(source_label)).cuda())
+                loss_target = args.lambda_adv_target * loss_adv_target + loss_seg_target
 
             scaler.scale(loss_target).backward()
             
@@ -169,7 +170,7 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
         writer.add_scalar('epoch/loss_', float(loss_D_mean), epoch)
         print('loss for discriminator : %f' % (loss_D_mean))
 
-        if epoch % args.checkpoint_step == 0 and epoch != 0:
+        if epoch % args.checkpoint_step == 0 and epoch != 0 and get_label == False:
             import os
             if not os.path.isdir(args.save_model_path):
                 os.mkdir(args.save_model_path)
@@ -268,12 +269,12 @@ if __name__ == '__main__':
         '--save_model_path', './checkpoints',
         '--use_pretrained_model', '0',
         '--checkpoint_name', 'model_unsupervisedSSL.pth',
-        '--checkpoint_step', '1',
+        '--checkpoint_step', '10',
         '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
         '--optimizer', 'sgd',
         '--multi', '0',
-        '--update-pseudo-labels', '4',
-        '--create-pseudolabels', '40',
+        '--update-pseudo-labels', '1',
+        '--create-pseudolabels', '60',
         '--validation_step', '10'
     ]
     main(params)
