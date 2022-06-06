@@ -100,20 +100,17 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
             with amp.autocast():
                 output_t, output_sup1_t, output_sup2_t, output_sup3_t, output_sup4_t = model(data_target)
                 if get_label:
-                  #IN CASE WITH PSEUDO-LABELS
                   loss1t = loss_func(output_t, label_target)
                   loss2t = 0.0 #loss_func(output_sup1_t, label_target)
                   loss3t = 0.0 #loss_func(output_sup2_t, label_target)
                   loss4t = 0.0 #loss_func(output_sup3_t, label_target)
                   loss5t = 0.0 #loss_func(output_sup4_t, label_target)
-                  loss_seg_target = loss1t + loss2t + loss3t + loss4t + loss5t
+                  loss_target = loss1t + loss2t + loss3t + loss4t + loss5t
                 else:
-                  loss_seg_target = 0.0
+                  D_out = model_D(F.softmax(output_t, dim=1))
 
-                D_out = model_D(F.softmax(output_t, dim=1))
-
-                loss_adv_target = bce_loss(D_out, Variable(torch.FloatTensor(D_out.data.size()).fill_(source_label)).cuda())
-                loss_target = args.lambda_adv_target * loss_adv_target + loss_seg_target
+                  loss_adv_target = bce_loss(D_out, Variable(torch.FloatTensor(D_out.data.size()).fill_(source_label)).cuda())
+                  loss_target = args.lambda_adv_target * loss_adv_target
 
             scaler.scale(loss_target).backward()
             
@@ -244,11 +241,11 @@ def main(params):
     model_D = torch.nn.DataParallel(model_D).cuda()
 
   optimizer_D = torch.optim.Adam(model_D.parameters(), args.learning_rate_D, betas=(0.9, 0.99))
-  epoch_start = 0
+  
 
   if args.use_pretrained_model == 1:
       model, model_D, optimizer, optimizer_D, epoch_start = load_da_model(args, model, model_D, optimizer, optimizer_D)
-  
+  epoch_start = 0
   # train
   train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_D, targetloader_val, img_mean, input_size_target, epoch_start)
   # final test
@@ -267,14 +264,14 @@ if __name__ == '__main__':
         '--cuda', '0',
         '--batch_size', '4',
         '--save_model_path', './checkpoints',
-        '--use_pretrained_model', '0',
+        '--use_pretrained_model', '1',
         '--checkpoint_name', 'model_unsupervisedSSL.pth',
         '--checkpoint_step', '10',
         '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
         '--optimizer', 'sgd',
         '--multi', '0',
         '--update-pseudo-labels', '1',
-        '--create-pseudolabels', '60',
-        '--validation_step', '10'
+        '--create-pseudolabels', '1',
+        '--validation_step', '5'
     ]
     main(params)
