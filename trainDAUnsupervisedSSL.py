@@ -44,29 +44,15 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
         loss_record_source = []
         loss_record_target = []
         loss_D_record = []
- 
-        ###########################
-        get_label = epoch >= args.create_pseudolabels
-        ###########################
-        if get_label:
-
-          dataset_train_Cityscapes= cityscapesDataSet(args.data_target, pseudo_path = args.pseudo_path + "/pseudolabels", mean = mean, mode='train', crop_size=crop_size, ssl = True)
-
-          targetloader = DataLoader(
-              dataset_train_Cityscapes,
-              batch_size=args.batch_size,
-              shuffle=True,
-              num_workers=args.num_workers
-          )
 
         for batch_train, batch_target in zip(enumerate(trainloader), enumerate(targetloader)):
             
             _, (data_train, label_train) = batch_train
-            if get_label:
-              _, (data_target, label_target, _) = batch_target
-            else:
-              _, (data_target, _, _) = batch_target
 
+            if args.ssl == 0:
+              _, (data_target, _, _) = batch_target
+            else:
+              _, (data_target, label_target, _) = batch_target
 
             optimizer.zero_grad()
             optimizer_D.zero_grad()
@@ -94,23 +80,25 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
             # train with target
             data_target = data_target.cuda()  
 
-            if get_label:                           
+            if args.ssl == 1:                           
              label_target = label_target.long().cuda()         
             
             with amp.autocast():
                 output_t, output_sup1_t, output_sup2_t, output_sup3_t, output_sup4_t = model(data_target)
-                if get_label:
+                if args.ssl == 1:
                   loss1t = loss_func(output_t, label_target)
                   loss2t = 0.0 #loss_func(output_sup1_t, label_target)
                   loss3t = 0.0 #loss_func(output_sup2_t, label_target)
-                  loss4t = 0.0 #loss_func(output_sup3_t, label_target)
-                  loss5t = 0.0 #loss_func(output_sup4_t, label_target)
-                  loss_target = loss1t + loss2t + loss3t + loss4t + loss5t
+                  loss4t = loss_func(output_sup3_t, label_target)
+                  loss5t = loss_func(output_sup4_t, label_target)
+                  loss_seg_target = loss1t + loss2t + loss3t + loss4t + loss5t
                 else:
-                  D_out = model_D(F.softmax(output_t, dim=1))
+                  loss_seg_target = 0.0
 
-                  loss_adv_target = bce_loss(D_out, Variable(torch.FloatTensor(D_out.data.size()).fill_(source_label)).cuda())
-                  loss_target = args.lambda_adv_target * loss_adv_target
+                D_out = model_D(F.softmax(output_t, dim=1))
+
+                loss_adv_target = bce_loss(D_out, Variable(torch.FloatTensor(D_out.data.size()).fill_(source_label)).cuda())
+                loss_target = args.lambda_adv_target * loss_adv_target + loss_seg_target
 
             scaler.scale(loss_target).backward()
             
@@ -167,11 +155,11 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
         writer.add_scalar('epoch/loss_', float(loss_D_mean), epoch)
         print('loss for discriminator : %f' % (loss_D_mean))
 
-        if epoch % args.checkpoint_step == 0 and epoch != 0 and get_label == False:
+        if epoch % args.checkpoint_step == 0 and epoch != 0:
             import os
             if not os.path.isdir(args.save_model_path):
                 os.mkdir(args.save_model_path)
-            save_da_model(args, model, model_D, optimizer, optimizer_D, epoch)
+            #save_da_model(args, model, model_D, optimizer, optimizer_D, epoch)
 
         if epoch % args.validation_step == 0 and epoch != 0:
             precision, miou = val(args, model, targetloader_val)
@@ -179,11 +167,11 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
                 max_miou = miou
                 import os 
                 os.makedirs(args.save_model_path, exist_ok=True)
-                save_da_model(args, model, model_D, optimizer, optimizer_D, epoch, "best")
+                #save_da_model(args, model, model_D, optimizer, optimizer_D, epoch, "best")
             writer.add_scalar('epoch/miou val', miou, epoch)
 
-        if ((epoch+1)%args.update_pseudo_labels==0 and epoch>=args.create_pseudolabels-1):
-            create_pseudo_labels(model, args, batch_size=1)
+        #if (epoch == args.create_pseudolabels):
+            #create_pseudo_labels(model, args, batch_size=1)
 
             
 
@@ -202,14 +190,24 @@ def main(params):
       num_workers=args.num_workers
   )
 
-  dataset_train_Cityscapes= cityscapesDataSet(args.data_target, mean=img_mean, mode='train', crop_size=input_size_target)
+  if args.ssl == 0:
+    dataset_train_Cityscapes= cityscapesDataSet(args.data_target, mean=img_mean, mode='train', crop_size=input_size_target)
 
-  targetloader = DataLoader(
-      dataset_train_Cityscapes,
-      batch_size=args.batch_size,
-      shuffle=True,
-      num_workers=args.num_workers
-  )
+    targetloader = DataLoader(
+        dataset_train_Cityscapes,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.num_workers
+    )
+  else:
+    dataset_train_Cityscapes= cityscapesDataSet(args.data_target, pseudo_path = args.pseudo_path + "/pseudolabels_3output", mean = img_mean, mode='train', crop_size=input_size_target, ssl = True)
+
+    targetloader = DataLoader(
+        dataset_train_Cityscapes,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.num_workers
+    )
 
   dataset_val = cityscapesDataSet(args.data_target, mean=img_mean, mode='val', crop_size=input_size_target)
 
@@ -242,10 +240,10 @@ def main(params):
 
   optimizer_D = torch.optim.Adam(model_D.parameters(), args.learning_rate_D, betas=(0.9, 0.99))
   
-
+  epoch_start = 0
   if args.use_pretrained_model == 1:
       model, model_D, optimizer, optimizer_D, epoch_start = load_da_model(args, model, model_D, optimizer, optimizer_D)
-  epoch_start = 0
+  
   # train
   train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_D, targetloader_val, img_mean, input_size_target, epoch_start)
   # final test
@@ -264,14 +262,15 @@ if __name__ == '__main__':
         '--cuda', '0',
         '--batch_size', '4',
         '--save_model_path', './checkpoints',
-        '--use_pretrained_model', '1',
+        '--use_pretrained_model', '0',
         '--checkpoint_name', 'model_unsupervisedSSL.pth',
         '--checkpoint_step', '10',
         '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
         '--optimizer', 'sgd',
         '--multi', '0',
         '--update-pseudo-labels', '1',
-        '--create-pseudolabels', '1',
-        '--validation_step', '5'
+        '--create-pseudolabels', '60',
+        '--validation_step', '5',
+        '--ssl', '0'
     ]
     main(params)

@@ -32,7 +32,7 @@ def get_args(params):
   
   parser.add_argument('--create-pseudolabels', type=int, default=50, help='loss function, dice or crossentropy')
   parser.add_argument('--gpu_ids', type=str, default='0,1', help='gpu ids: e.g. 0  0,1,2, 0,2.')
-  
+
   parser.add_argument("--power", type=float, default=0.9,
                       help="Decay parameter to compute the learning rate.")
   parser.add_argument("--learning-rate-D", type=float, default=1e-4,
@@ -49,7 +49,7 @@ def get_args(params):
                         help="lambda_adv for adversarial training.")
   parser.add_argument("--transformation_on_source", type=str, default=None, help="Could be LAB or FDA. None means no transformation.")
   parser.add_argument('--ligth_weigth', type=str, default=None, help="Could be LAB or FDA. None means no transformation.")
-  parser.add_argument("--ssl", type=str, default=None, help="enable self supervised learning")
+  parser.add_argument("--ssl", type=int, default=0, help="enable self supervised learning")
   parser.add_argument("--update-pseudo-labels", type=int, default=1, help="How many epochs pseudo labels should be updated.")
   parser.add_argument('--checkpoint_name', type=str, default='', help='models are saved here')
         

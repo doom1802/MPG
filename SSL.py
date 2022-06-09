@@ -11,11 +11,11 @@ from utils.utils import rgb_label
 
 def create_pseudo_labels(model, args, batch_size):
 
-    if not os.path.exists(args.pseudo_path  + "/pseudolabels" ):
-      os.makedirs(args.pseudo_path + "/pseudolabels")
+    if not os.path.exists(args.pseudo_path  + "/pseudolabels_3output" ):
+      os.makedirs(args.pseudo_path + "/pseudolabels_3output")
 
-    if not os.path.exists(args.pseudo_path + "/pseudolabels_rgb"):
-      os.makedirs(args.pseudo_path + "/pseudolabels_rgb")
+    if not os.path.exists(args.pseudo_path + "/pseudolabels_rgb_3output"):
+      os.makedirs(args.pseudo_path + "/pseudolabels_rgb_3output")
     
     model.eval()
     model.cuda()   
@@ -48,34 +48,34 @@ def create_pseudo_labels(model, args, batch_size):
               output_sup = nn.functional.softmax(output_sup, dim=1)
               output_sup = nn.functional.upsample(output_sup, (512, 1024), mode='nearest').cpu().data[0].numpy()
               output_sup = output_sup.transpose(1,2,0)
-              label_sup, prob_sup = np.argmax(output, axis=2)%19, np.max(output, axis=2)
+              #prob_sup = np.argmax(output, axis=2)%19, np.max(output, axis=2)
 
               #output_sup1 = nn.functional.softmax(output_sup1, dim=1)
               #output_sup1 = nn.functional.upsample(output_sup1, (512, 1024), mode='nearest', align_corners=True).cpu().data[0].numpy()
               #output_sup1 = output_sup1.transpose(1,2,0)
-              #label_sup1, prob_sup1 = np.argmax(output, axis=2)%19, np.max(output, axis=2)
+              #prob_sup1 = np.argmax(output, axis=2)%19, np.max(output, axis=2)
 
               #output_sup2 = nn.functional.softmax(output_sup2, dim=1)
               #output_sup2 = nn.functional.upsample(output_sup2, (512, 1024), mode='nearest', align_corners=True).cpu().data[0].numpy()
               #output_sup2 = output_sup2.transpose(1,2,0)
-              #label_sup2, prob_sup2 = np.argmax(output, axis=2)%19, np.max(output, axis=2)
+              #prob_sup2 = np.argmax(output, axis=2)%19, np.max(output, axis=2)
 
               output_sup3 = nn.functional.softmax(output_sup3, dim=1)
               output_sup3 = nn.functional.upsample(output_sup3, (512, 1024), mode='nearest').cpu().data[0].numpy()
               output_sup3 = output_sup3.transpose(1,2,0)
-              label_sup3, prob_sup3 = np.argmax(output, axis=2)%19, np.max(output, axis=2)
+              #prob_sup3 = np.argmax(output, axis=2)%19, np.max(output, axis=2)
 
               output_sup4 = nn.functional.softmax(output_sup4, dim=1)
               output_sup4 = nn.functional.upsample(output_sup4, (512, 1024), mode='nearest').cpu().data[0].numpy()
               output_sup4 = output_sup4.transpose(1,2,0)
-              label_sup4, prob_sup4 = np.argmax(output, axis=2)%19, np.max(output, axis=2)
+              #prob_sup4 = np.argmax(output, axis=2)%19, np.max(output, axis=2)
               
-              #output = np.concatenate((output_sup, output_sup3, output_sup4), axis=2)
-              #label, prob = np.argmax(output, axis=2)%19, np.max(output, axis=2)
+              output = np.concatenate((output_sup, output_sup3, output_sup4), axis=2)
+              label, prob = np.argmax(output, axis=2)%19, np.max(output, axis=2)
 
               # majority voting
-              output = np.concatenate((prob_sup, prob_sup3, prob_sup4), axis=2)
-              label, prob = np.argmax(output, axis=2)%19, np.max(output, axis=2)
+              #output = np.concatenate((prob_sup, prob_sup3, prob_sup4), axis=2)
+              #label, prob = np.argmax(output, axis=2)%19, np.max(output, axis=2)
 
               predicted_label[index] = label.copy()
               predicted_prob[index] = prob.copy()
@@ -119,5 +119,5 @@ def create_pseudo_labels(model, args, batch_size):
             rgb_image = rgb_label(output)
             output = Image.fromarray(output)
 
-            output.save('%s/%s' % (args.pseudo_path + "/pseudolabels", name))
-            rgb_image.save('%s/%s' % (args.pseudo_path + "/pseudolabels_rgb", name))
+            output.save('%s/%s' % (args.pseudo_path + "/pseudolabels_output", name))
+            rgb_image.save('%s/%s' % (args.pseudo_path + "/pseudolabels_rgb_output", name))
