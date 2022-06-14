@@ -374,21 +374,21 @@ def get_target_tensor_mc(input_tensor, mode):
         
 def save_da_model(args, model, model_d1, optimizer, optimizer_d1, epoch, name = None):
     if name is None:
-      filename = args.checkpoint_name  
+      filename = args.checkpoint_name_save  
     else:
-      args.checkpoint_name.replace(".pth", "_best.pth")
+      filename = args.checkpoint_name_save.replace(".pth", "_best.pth")
     torch.save({
         'optimizer_state': optimizer.state_dict(),
         'optimizer_d_state': optimizer_d1.state_dict(),
         'model_state': model.state_dict(),
         'model_d_state': model_d1.state_dict(),
         'total_epoch_so_far': epoch
-    }, os.path.join(args.save_model_path, args.checkpoint_name))
+    }, os.path.join(args.save_model_path, filename))
 
 
 def load_da_model(args, model, model_d1, optimizer, optimizer_d1):
-    print("Resuming Model")
-    state_dict_path = os.path.join(args.save_model_path, args.checkpoint_name)
+    print("Resuming Model...")
+    state_dict_path = os.path.join(args.save_model_path, args.checkpoint_name_load)
     checkpoint = torch.load(state_dict_path)
 
     optimizer.load_state_dict(checkpoint['optimizer_state'])

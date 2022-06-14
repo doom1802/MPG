@@ -51,8 +51,9 @@ def get_args(params):
   parser.add_argument('--ligth_weigth', type=str, default=None, help="Could be LAB or FDA. None means no transformation.")
   parser.add_argument("--ssl", type=int, default=0, help="enable self supervised learning")
   parser.add_argument("--update-pseudo-labels", type=int, default=1, help="How many epochs pseudo labels should be updated.")
-  parser.add_argument('--checkpoint_name', type=str, default='', help='models are saved here')
-        
+  parser.add_argument('--checkpoint_name_load', type=str, default='', help='models are saved here')
+  parser.add_argument('--checkpoint_name_save', type=str, default='', help='models are saved here')
+     
   args = parser.parse_args(params)
 
   img_mean = np.array((73.158359210711552, 82.908917542625858, 72.392398761941593), dtype=np.float32)

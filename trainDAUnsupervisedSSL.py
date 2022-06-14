@@ -159,7 +159,7 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
             import os
             if not os.path.isdir(args.save_model_path):
                 os.mkdir(args.save_model_path)
-            #save_da_model(args, model, model_D, optimizer, optimizer_D, epoch)
+            save_da_model(args, model, model_D, optimizer, optimizer_D, epoch)
 
         if epoch % args.validation_step == 0 and epoch != 0:
             precision, miou = val(args, model, targetloader_val)
@@ -167,11 +167,12 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
                 max_miou = miou
                 import os 
                 os.makedirs(args.save_model_path, exist_ok=True)
-                #save_da_model(args, model, model_D, optimizer, optimizer_D, epoch, "best")
+                save_da_model(args, model, model_D, optimizer, optimizer_D, epoch, "best")
             writer.add_scalar('epoch/miou val', miou, epoch)
 
-        #if (epoch == args.create_pseudolabels):
-            #create_pseudo_labels(model, args, batch_size=1)
+        #if args.ssl == 1 and epoch >= args.create_pseudolabels and epoch % args.update_pseudo_labels == 0 :
+          #create_pseudo_labels(model, args, batch_size=1)
+
 
             
 
@@ -189,6 +190,15 @@ def main(params):
       shuffle=True,
       num_workers=args.num_workers
   )
+  if args.ssl == 1:
+    pseudo_path = "/pseudolabels"
+    args.checkpoint_name_save = args.checkpoint_name_save.replace(".pth", "_noMulti.pth")
+    if args.multi == 2:
+      pseudo_path = "/pseudolabels_2output" 
+      args.checkpoint_name_save = args.checkpoint_name_save.replace(".pth", "_2output.pth")
+    elif args.multi == 3:
+      pseudo_path = "/pseudolabels_3output" 
+      args.checkpoint_name_save = args.checkpoint_name_save.replace(".pth", "_3output.pth")
 
   if args.ssl == 0:
     dataset_train_Cityscapes= cityscapesDataSet(args.data_target, mean=img_mean, mode='train', crop_size=input_size_target)
@@ -200,7 +210,7 @@ def main(params):
         num_workers=args.num_workers
     )
   else:
-    dataset_train_Cityscapes= cityscapesDataSet(args.data_target, pseudo_path = args.pseudo_path + "/pseudolabels_3output", mean = img_mean, mode='train', crop_size=input_size_target, ssl = True)
+    dataset_train_Cityscapes= cityscapesDataSet(args.data_target, pseudo_path = args.pseudo_path + pseudo_path, mean = img_mean, mode='train', crop_size=input_size_target, ssl = True)
 
     targetloader = DataLoader(
         dataset_train_Cityscapes,
@@ -240,14 +250,20 @@ def main(params):
 
   optimizer_D = torch.optim.Adam(model_D.parameters(), args.learning_rate_D, betas=(0.9, 0.99))
   
-  epoch_start = 0
+  
   if args.use_pretrained_model == 1:
       model, model_D, optimizer, optimizer_D, epoch_start = load_da_model(args, model, model_D, optimizer, optimizer_D)
+  epoch_start = 0
   
-  # train
-  train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_D, targetloader_val, img_mean, input_size_target, epoch_start)
-  # final test
-  val(args, model, targetloader_val)
+  if args.use_pretrained_model == 1:
+    val(args, model, targetloader_val)
+    if args.ssl == 1:
+      create_pseudo_labels(model, args, batch_size=1)
+  else:
+    # train
+    train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_D, targetloader_val, img_mean, input_size_target, epoch_start)
+    # final test
+    val(args, model, targetloader_val)
 
 
 if __name__ == '__main__':
@@ -263,14 +279,15 @@ if __name__ == '__main__':
         '--batch_size', '4',
         '--save_model_path', './checkpoints',
         '--use_pretrained_model', '0',
-        '--checkpoint_name', 'model_unsupervisedSSL.pth',
-        '--checkpoint_step', '10',
+        '--checkpoint_name_load', 'model_unsupervisedSSL_best.pth', #'model_unsupervisedSSL_3output.pth'
+        '--checkpoint_name_save', 'model_unsupervisedSSL.pth',
+        '--checkpoint_step', '5',
         '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
         '--optimizer', 'sgd',
         '--multi', '0',
-        '--update-pseudo-labels', '1',
-        '--create-pseudolabels', '60',
+        '--update-pseudo-labels', '10',
+        '--create-pseudolabels', '30',
         '--validation_step', '5',
-        '--ssl', '0'
+        '--ssl', '1',
     ]
     main(params)
