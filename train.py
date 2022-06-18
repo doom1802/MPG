@@ -8,7 +8,7 @@ import torch
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 import numpy as np
-from utils.utils import poly_lr_scheduler
+from utils.utils import poly_lr_scheduler, save_model, load_model
 import torch.cuda.amp as amp
 from dataset.build_datasetcityscapes import cityscapesDataSet
 from utils.config import get_args
@@ -61,8 +61,7 @@ def train(args, model, optimizer, dataloader_train, dataloader_val): #passo gli 
             import os
             if not os.path.isdir(args.save_model_path):
                 os.mkdir(args.save_model_path)
-            torch.save(model.module.state_dict(),
-                       os.path.join(args.save_model_path, 'latest_dice_loss.pth'))
+            save_model(args, model, optimizer, epoch)
 
         if epoch % args.validation_step == 0 and epoch != 0:
             precision, miou = val(args, model, dataloader_val)
@@ -70,8 +69,7 @@ def train(args, model, optimizer, dataloader_train, dataloader_val): #passo gli 
                 max_miou = miou
                 import os 
                 os.makedirs(args.save_model_path, exist_ok=True)
-                torch.save(model.module.state_dict(),
-                           os.path.join(args.save_model_path, 'best_dice_loss.pth'))
+                save_model(args, model, optimizer, epoch, "best")
             writer.add_scalar('epoch/precision_val', precision, epoch)
             writer.add_scalar('epoch/miou val', miou, epoch)
 
@@ -109,30 +107,34 @@ def main(params):
     # build optimizer
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, momentum=0.9, weight_decay=1e-4)
 
-    # load pretrained model if exists
-    if args.pretrained_model_path is not None:
-        print('load model from %s ...' % args.pretrained_model_path)
-        model.module.load_state_dict(torch.load(args.pretrained_model_path))
-        print('Done!')
-
-    # train
-    train(args, model, optimizer, dataloader_train, dataloader_val)
-    # final test
-    val(args, model, dataloader_val)
+    if args.use_pretrained_model == 1:
+      model, optimizer, epoch_start = load_model(args, model, optimizer)
+ 
+  
+    if args.use_pretrained_model == 1:
+      val(args, model, dataloader_val)
+    else:
+      # train
+      train(args, model, optimizer, dataloader_train, dataloader_val)
+      # final test
+      val(args, model, dataloader_val)
 
 
 if __name__ == '__main__':
     params = [
-        '--num_epochs', '50',
+        '--num_epochs', '100',
         '--learning_rate', '2.5e-2',
         '--data-target', './data/Cityscapes',
         '--num_workers', '8',
         '--num_classes', '19',
+        '--save_model_path', './checkpoints',
         '--cuda', '0',
         '--batch_size', '8',
-        '--save_model_path', './checkpoints_101_sgd',
+        '--checkpoint_name_load', 'model_best.pth', #'model_unsupervisedSSL_3output.pth'
+        '--checkpoint_name_save', 'model.pth',
         '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
-
+        '--optimizer', 'sgd',
+        '--use_pretrained_model', '1',
     ]
     main(params)
 

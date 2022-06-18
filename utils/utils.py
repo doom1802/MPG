@@ -397,3 +397,26 @@ def load_da_model(args, model, model_d1, optimizer, optimizer_d1):
     model_d1.load_state_dict(checkpoint['model_d_state'])
     epoch = checkpoint['total_epoch_so_far']
     return model, model_d1, optimizer, optimizer_d1, epoch
+
+
+def save_model(args, model, optimizer, epoch, name = None):
+    if name is None:
+      filename = args.checkpoint_name_save  
+    else:
+      filename = args.checkpoint_name_save.replace(".pth", "_best.pth")
+    torch.save({
+        'optimizer_state': optimizer.state_dict(),
+        'model_state': model.state_dict(),
+        'total_epoch_so_far': epoch
+    }, os.path.join(args.save_model_path, filename))
+
+
+def load_model(args, model, optimizer):
+    print("Resuming Model...")
+    state_dict_path = os.path.join(args.save_model_path, args.checkpoint_name_load)
+    checkpoint = torch.load(state_dict_path)
+
+    optimizer.load_state_dict(checkpoint['optimizer_state'])
+    model.load_state_dict(checkpoint['model_state'])
+    epoch = checkpoint['total_epoch_so_far']
+    return model, optimizer, epoch

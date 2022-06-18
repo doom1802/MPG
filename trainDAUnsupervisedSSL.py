@@ -18,7 +18,7 @@ from validation import val
 from SSL import create_pseudo_labels
 
 
-def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_D, targetloader_val, mean, crop_size, epoch_start): #passo gli args, il modello, l'optimizer e il dataloader
+def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_D, targetloader_val, mean, crop_size): #passo gli args, il modello, l'optimizer e il dataloader
     writer = SummaryWriter(comment=''.format(args.optimizer, args.context_path))
 
     scaler = amp.GradScaler()
@@ -30,7 +30,7 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
     step = 0
     source_label = 0
     target_label = 1
-    for epoch in range(epoch_start, args.num_epochs):
+    for epoch in range(args.num_epochs):
 
         lr = poly_lr_scheduler(optimizer, args.learning_rate, iter=epoch, max_iter=args.num_epochs, power=args.power)
         discriminator_lr = poly_lr_scheduler(optimizer_D, args.learning_rate_D, iter=epoch, max_iter=args.num_epochs, power=args.power)
@@ -168,12 +168,8 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
                 import os 
                 os.makedirs(args.save_model_path, exist_ok=True)
                 save_da_model(args, model, model_D, optimizer, optimizer_D, epoch, "best")
+            writer.add_scalar('epoch/precision_val', precision, epoch)
             writer.add_scalar('epoch/miou val', miou, epoch)
-
-        #if args.ssl == 1 and epoch >= args.create_pseudolabels and epoch % args.update_pseudo_labels == 0 :
-          #create_pseudo_labels(model, args, batch_size=1)
-
-
             
 
 def main(params):
@@ -191,14 +187,15 @@ def main(params):
       num_workers=args.num_workers
   )
   if args.ssl == 1:
-    pseudo_path = "/pseudolabels"
-    args.checkpoint_name_save = args.checkpoint_name_save.replace(".pth", "_noMulti.pth")
     if args.multi == 2:
       pseudo_path = "/pseudolabels_2output" 
       args.checkpoint_name_save = args.checkpoint_name_save.replace(".pth", "_2output.pth")
     elif args.multi == 3:
       pseudo_path = "/pseudolabels_3output" 
       args.checkpoint_name_save = args.checkpoint_name_save.replace(".pth", "_3output.pth")
+    else:
+      pseudo_path = "/pseudolabels"
+      args.checkpoint_name_save = args.checkpoint_name_save.replace(".pth", "_noMulti.pth")
 
   if args.ssl == 0:
     dataset_train_Cityscapes= cityscapesDataSet(args.data_target, mean=img_mean, mode='train', crop_size=input_size_target)
@@ -240,20 +237,19 @@ def main(params):
   optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, momentum=0.9, weight_decay=1e-4)
 
   
-  #if args.ligth_weigth is None: 
-  model_D = FCDiscriminator(num_classes=args.num_classes)
-  #else:
-  # model_D = FCDiscriminatorLight(num_classes=args.num_classes)
+  if args.ligth_weigth is None: 
+    model_D = FCDiscriminator(num_classes=args.num_classes)
+  else:
+   model_D = FCDiscriminatorLight(num_classes=args.num_classes)
   
   if torch.cuda.is_available() and args.use_gpu:
     model_D = torch.nn.DataParallel(model_D).cuda()
 
   optimizer_D = torch.optim.Adam(model_D.parameters(), args.learning_rate_D, betas=(0.9, 0.99))
   
-  
   if args.use_pretrained_model == 1:
       model, model_D, optimizer, optimizer_D, epoch_start = load_da_model(args, model, model_D, optimizer, optimizer_D)
-  epoch_start = 0
+ 
   
   if args.use_pretrained_model == 1:
     val(args, model, targetloader_val)
@@ -278,16 +274,14 @@ if __name__ == '__main__':
         '--cuda', '0',
         '--batch_size', '4',
         '--save_model_path', './checkpoints',
-        '--use_pretrained_model', '0',
-        '--checkpoint_name_load', 'model_unsupervisedSSL_best.pth', #'model_unsupervisedSSL_3output.pth'
+        '--use_pretrained_model', '1',
+        '--checkpoint_name_load', 'model_unsupervisedSSL_3output_best.pth', #'model_unsupervisedSSL_3output.pth'
         '--checkpoint_name_save', 'model_unsupervisedSSL.pth',
-        '--checkpoint_step', '5',
+        '--checkpoint_step', '10',
         '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
         '--optimizer', 'sgd',
-        '--multi', '0',
-        '--update-pseudo-labels', '10',
-        '--create-pseudolabels', '30',
-        '--validation_step', '5',
-        '--ssl', '1',
+        '--multi', '3',
+        '--validation_step', '10',
+        '--ssl', '0',
     ]
     main(params)
