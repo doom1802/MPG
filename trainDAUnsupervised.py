@@ -89,8 +89,8 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
                   loss1t = loss_func(output_t, label_target)
                   loss2t = 0.0 #loss_func(output_sup1_t, label_target)
                   loss3t = 0.0 #loss_func(output_sup2_t, label_target)
-                  loss4t = 0.0#loss_func(output_sup3_t, label_target)
-                  loss5t = 0.0#loss_func(output_sup4_t, label_target)
+                  loss4t = loss_func(output_sup3_t, label_target)
+                  loss5t = loss_func(output_sup4_t, label_target)
                   loss_seg_target = loss1t + loss2t + loss3t + loss4t + loss5t
                 else:
                   loss_seg_target = 0.0
