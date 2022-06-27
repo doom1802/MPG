@@ -6,7 +6,8 @@ import torch
 from torch import randn
 from thop import profile
 from thop import clever_format
-
+from model.build_BiSeNet import BiSeNet
+from model.build_discriminator import FCDiscriminator, FCDiscriminatorLight
 
 def complexity(model, input):
     macs, params = profile(model, inputs=(input, ), verbose=False)
@@ -16,16 +17,7 @@ def complexity(model, input):
     flops = 2*macs
     return macs, flops, params
 
-def get_complexity(model, model_d, model_d_light):
-  #model = BiSeNet(19, 'resnet18')
-  #model_d = FCDiscriminator(19)
-  #model_d_light = FCDiscriminatorLight(19)
-  #print(summary(model, torch.zeros((1, 3, 512, 1024))))
-  #print(summary(model_d, torch.zeros((1, 19, 512, 1024))))
-  #print(summary(model_d_light, torch.zeros((1, 19, 512, 1024))))
-  #flops = FlopCountAnalysis(model, torch.zeros((2, 3, 512, 1024)))
-  #flops = FlopCountAnalysis(model_d, torch.zeros((2, 3, 512, 1024)))
-  #flops = FlopCountAnalysis(model_d_light, torch.zeros((2, 3, 512, 1024)))
+def get_complexity(model = BiSeNet(19, 'resnet101'), model_d = FCDiscriminator(19), model_d_light = FCDiscriminatorLight(19)):
   input = randn(1, 3, 512, 1024)
   macs, flops, params = complexity(model, input)
   macs, flops, params = clever_format([macs, flops, params], "%.3f")
@@ -54,4 +46,4 @@ def get_complexity(model, model_d, model_d_light):
   print(f"Parameters: {params}")
 
 if __name__ == '__main__':
-    main()
+    get_complexity()

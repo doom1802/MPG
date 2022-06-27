@@ -15,7 +15,7 @@ from dataset.build_datasetGTA5 import GTA5DataSet
 from dataset.build_datasetcityscapes import cityscapesDataSet
 from utils.config import get_args
 from validation import val
-from SSL import create_pseudo_labels
+from utils.SSL import create_pseudo_labels
 
 
 def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_D, targetloader_val, mean, crop_size): #passo gli args, il modello, l'optimizer e il dataloader
@@ -89,8 +89,8 @@ def train(args, model, optimizer, trainloader, targetloader, model_D, optimizer_
                   loss1t = loss_func(output_t, label_target)
                   loss2t = 0.0 #loss_func(output_sup1_t, label_target)
                   loss3t = 0.0 #loss_func(output_sup2_t, label_target)
-                  loss4t = loss_func(output_sup3_t, label_target)
-                  loss5t = loss_func(output_sup4_t, label_target)
+                  loss4t = 0.0#loss_func(output_sup3_t, label_target)
+                  loss5t = 0.0#loss_func(output_sup4_t, label_target)
                   loss_seg_target = loss1t + loss2t + loss3t + loss4t + loss5t
                 else:
                   loss_seg_target = 0.0
@@ -176,6 +176,14 @@ def main(params):
 
   args, input_size, input_size_target, img_mean = get_args(params)
 
+  print("Actual parameters")
+  print("ssl: " + str(args.ssl))
+  print("use_pretrained_model: " + str(args.use_pretrained_model))
+  print("ligth_weigth: " + str(args.ligth_weigth))
+  print("checkpoint_name_load: " + args.checkpoint_name_load)
+  print("checkpoint_name_save: " + args.checkpoint_name_save)
+
+
   # create dataset and dataloader   
   
   dataset_train_GTA = GTA5DataSet(args.data_source, target_folder = args.data_target, mean = img_mean, crop_size = input_size)
@@ -236,8 +244,7 @@ def main(params):
   # build optimizer
   optimizer = torch.optim.SGD(model.parameters(), args.learning_rate, momentum=0.9, weight_decay=1e-4)
 
-  
-  if args.ligth_weigth is None: 
+  if args.ligth_weigth == 0: 
     model_D = FCDiscriminator(num_classes=args.num_classes)
   else:
     model_D = FCDiscriminatorLight(num_classes=args.num_classes)
@@ -250,7 +257,6 @@ def main(params):
   if args.use_pretrained_model == 1:
       model, model_D, optimizer, optimizer_D, epoch_start = load_da_model(args, model, model_D, optimizer, optimizer_D)
  
-  
   if args.use_pretrained_model == 1:
     val(args, model, targetloader_val)
     if args.ssl == 1:
@@ -266,23 +272,22 @@ if __name__ == '__main__':
     params = [
         '--num_epochs', '100',
         '--learning_rate', '2.5e-2',
+        '--num_workers', '4',
+        '--num_classes', '19',
+        '--validation_step', '5',
+        '--checkpoint_step', '5',
+        '--cuda', '0',
+        '--batch_size', '4',
         '--data-source', './data/GTA5',
         '--data-target', './data/Cityscapes',
         '--pseudo-path', './data/Pseudo_Cityscapes',
-        '--num_workers', '4',
-        '--num_classes', '19',
-        '--cuda', '0',
-        '--batch_size', '4',
-        '--save_model_path', './checkpoints_new',
-        '--use_pretrained_model', '0',
-        '--checkpoint_name_load', 'model_unsupervised_best.pth', #'model_unsupervisedSSL_3output.pth'
-        '--checkpoint_name_save', 'model_unsupervised.pth',
-        '--checkpoint_step', '5',
         '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
-        '--optimizer', 'sgd',
-        '--multi', '0',
-        '--validation_step', '5',
-        '--ssl', '0',
-        '--ligth_weigth', '1'
+        '--save_model_path', './checkpoints',
+        '--checkpoint_name_load', 'model_unsupervised_best.pth',
+        '--checkpoint_name_save', 'model_unsupervised_3output.pth',
+        '--multi', '3', 
+        '--ssl', '1',
+        '--use_pretrained_model', '0',
+        '--ligth_weigth', '0',
     ]
     main(params)

@@ -130,9 +130,9 @@ if __name__ == '__main__':
         '--save_model_path', './checkpoints',
         '--cuda', '0',
         '--batch_size', '8',
-        '--checkpoint_name_load', 'model_best.pth', #'model_unsupervisedSSL_3output.pth'
-        '--checkpoint_name_save', 'model.pth',
-        '--context_path', 'resnet101',  # set resnet18 or resnet101, only support resnet18 and resnet101
+        '--checkpoint_name_load', 'model_resnet18_best.pth', #'model_unsupervisedSSL_3output.pth'
+        '--checkpoint_name_save', 'model_resnet18.pth',
+        '--context_path', 'resnet18',  # set resnet18 or resnet101, only support resnet18 and resnet101
         '--optimizer', 'sgd',
         '--use_pretrained_model', '1',
     ]

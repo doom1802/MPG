@@ -8,6 +8,7 @@ import random
 import numbers
 import torchvision
 import os
+from torch.autograd import Variable
 
 palette = [128, 64, 128,  # road, 0
             244, 35, 232,  # sidewalk, 1
@@ -54,15 +55,6 @@ def flatten(tensor):
     transposed = tensor.permute(axis_order)
     # Flatten: (C, N, D, H, W) -> (C, N * D * H * W)
     return transposed.contiguous().view(C, -1)
-
-def adjust_learning_rate_D(optimizer, epoch, args):
-    lr = lr_poly(args.learning_rate_D, epoch, args.num_epochs, args.power)
-    optimizer.param_groups[0]['lr'] = lr
-    if len(optimizer.param_groups) > 1:
-        optimizer.param_groups[1]['lr'] = lr * 10
-
-def lr_poly(base_lr, iter, max_iter, power):
-    return base_lr * ((1 - float(iter) / max_iter) ** (power))
 
 def poly_lr_scheduler(optimizer, init_lr, iter, lr_decay_iter=1,
                       max_iter=300, power=0.9):
@@ -308,10 +300,7 @@ def group_weight(weight_group, module, norm_layer, lr):
 	weight_group.append(dict(params=group_no_decay, weight_decay=.0, lr=lr))
 	return weight_group
 
-import torch
-import torch.nn.functional as F
-import torch.nn as nn
-from torch.autograd import Variable
+
 
 
 class CrossEntropy2d(nn.Module):

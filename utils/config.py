@@ -16,21 +16,18 @@ def get_args(params):
   parser.add_argument('--learning_rate', type=float, default=0.01, help='learning rate used for train')
   parser.add_argument('--data-source', type=str, default='', help='path of training data')
   parser.add_argument('--data-target', type=str, default='', help='path of training data')
-  parser.add_argument('--pseudo-path', type=str, default='', help='path of pseudo data')
-  parser.add_argument("--multi", type=int, default=0, help='ok')
   
   parser.add_argument('--num_workers', type=int, default=4, help='num of workers')
   parser.add_argument('--num_classes', type=int, default=32, help='num of object classes (with void)')
   parser.add_argument('--cuda', type=str, default='0', help='GPU ids used for training')
   parser.add_argument('--use_gpu', type=bool, default=True, help='whether to user gpu for training')
-  parser.add_argument('--use_pretrained_model', type=int, default=0, help='path to pretrained model')
+  parser.add_argument('--use_pretrained_model', type=int, default=0, help='use or not a pretrained model')
   parser.add_argument('--save_model_path', type=str, default=None, help='path to save model')
-  parser.add_argument('--optimizer', type=str, default='rmsprop', help='optimizer, support rmsprop, sgd, adam')
-  parser.add_argument('--loss', type=str, default='crossentropy', help='loss function, dice or crossentropy')
-  parser.add_argument('--input-size', type=str, default='1280,720', help='optimizer, support rmsprop, sgd, adam')
-  parser.add_argument('--input-size-target', type=str, default='1024,512', help='loss function, dice or crossentropy')
+  parser.add_argument('--optimizer', type=str, default='sgd', help='optimizer, support only sgd')
+  parser.add_argument('--loss', type=str, default='crossentropy', help='loss function crossentropy')
+  parser.add_argument('--input-size', type=str, default='1280,720', help='input size of the image')
+  parser.add_argument('--input-size-target', type=str, default='1024,512', help='input size of the image from source')
   
-  parser.add_argument('--create-pseudolabels', type=int, default=50, help='loss function, dice or crossentropy')
   parser.add_argument('--gpu_ids', type=str, default='0,1', help='gpu ids: e.g. 0  0,1,2, 0,2.')
 
   parser.add_argument("--power", type=float, default=0.9,
@@ -43,16 +40,15 @@ def get_args(params):
                       help="lambda_seg.")
   parser.add_argument("--lambda-adv-target", type=float, default=0.001,
                       help="lambda_adv for adversarial training.")
-  parser.add_argument("--lambda-adv-target1", type=float, default=0.002,
-                        help="lambda_adv for adversarial training.")
-  parser.add_argument("--lambda-adv-target2", type=float, default=0.004,
-                        help="lambda_adv for adversarial training.")
-  parser.add_argument("--transformation_on_source", type=str, default=None, help="Could be LAB or FDA. None means no transformation.")
-  parser.add_argument('--ligth_weigth', type=str, default=None, help="Could be LAB or FDA. None means no transformation.")
+
+  parser.add_argument('--ligth_weigth', type=int, default=None, help="Could be LAB or FDA. None means no transformation.")
   parser.add_argument("--ssl", type=int, default=0, help="enable self supervised learning")
-  parser.add_argument("--update-pseudo-labels", type=int, default=1, help="How many epochs pseudo labels should be updated.")
-  parser.add_argument('--checkpoint_name_load', type=str, default='', help='models are saved here')
-  parser.add_argument('--checkpoint_name_save', type=str, default='', help='models are saved here')
+  parser.add_argument('--checkpoint_name_load', type=str, default='', help='name of the model to save, ends with .pth')
+  parser.add_argument('--checkpoint_name_save', type=str, default='', help='name of the model to load, ends with .pth')
+
+
+  parser.add_argument('--pseudo-path', type=str, default='', help='path of pseudo data')
+  parser.add_argument('--multi', type=int, default=0, help='How many layer used for creating the pseudo labels')
      
   args = parser.parse_args(params)
 

@@ -5,10 +5,8 @@ import numpy as np
 
 def val(args, model, dataloader):
     print('start val!')
-    # label_info = get_label_info(csv_path)
     with torch.no_grad(): 
         model.eval() 
-        #model.aux_mode = "eval" #test per bisenetv2 (commenta riga e scommenta riga precedente per bisenetv1)
         precision_record = []
         hist = np.zeros((args.num_classes, args.num_classes))
         for i, (data, label, _) in enumerate(dataloader):
@@ -19,7 +17,7 @@ def val(args, model, dataloader):
             # get RGB predict image
             # model: BiseNet(args.num_classes, args.context_path)
             predict, _, _, _, _ = model(data)
-            predict = predict.squeeze() #squeeze toglie le dimensioni pari ad 1 
+            predict = predict.squeeze() 
             predict = reverse_one_hot(predict)
             predict = np.array(predict.cpu())
 
